@@ -1,8 +1,5 @@
-import os
 import numpy as np
 from datetime import datetime
-
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 HR_WIDTH = 50
 

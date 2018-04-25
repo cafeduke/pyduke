@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn.datasets import fetch_mldata
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, accuracy_score, mean_squared_error
-import util.core_util as cu
+import pyduke.common.core_util as cu
 
 SEED = 42
     
