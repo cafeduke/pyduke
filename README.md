@@ -89,9 +89,9 @@ pileline = Pipeline([
     # For each cell having the name, the prefix (like Mr, Ms, Sir etc) is extracted 
     # and a new column 'NamePrefix' is created. The original 'Name' column is removed.
     ('add_name_prefix'     , dp.Mapper(
-        						{'Name':convert_name_to_prefix}, 
-                                  map_column_to_new={'Name':'NamePrefix'},
-                                  remove_original=True)),
+                                 {'Name':convert_name_to_prefix}, 
+                                 map_column_to_new={'Name':'NamePrefix'},
+                                 remove_original=True)),
     
     # A new column is added based on Series returned by handler
     ('add_family_weight'   , dp.AddColumn({'FamilyTotal':process_sibling_parent})),
