@@ -1,28 +1,38 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+import pyduke.common.core_util as cu
 from sklearn.datasets import fetch_mldata
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, accuracy_score, mean_squared_error
-import pyduke.common.core_util as cu
+from tabulate import tabulate
 
 SEED = 42
     
-def load_data ():
-    dataset = fetch_mldata('MNIST original', data_home=cu.PROJECT_ROOT + '/dataset')
+def load_sklearn_data (dataname, project_root=None, data_home=None):
+    ''' 
+    Load mldata.org dataset specified by ``dataname`` 
+    If ``data_home`` is ``None`` it is evaluated to be ``<project root>/dataset``
+    '''
+    data_home = data_home if project_root == None else project_root + '/dataset'
+    dataset = fetch_mldata(dataname, data_home=data_home)
     X, y = dataset['data'], dataset['target']
     return X, y
 
+# -------------------------------------------------------------------------------------------------
+# Stats utility functions
+# -------------------------------------------------------------------------------------------------
+
 def get_stratified_shuffle_split (X, y, **kwargs):
+    ''' Perform a stratified shuffle split, statified based on ``y``. See train_test_split for ``kwargs`` '''
     X_train, X_test, y_train, y_test = train_test_split(X, y, shuffle=True, stratify=y, random_state=SEED, **kwargs)
     return X_train, y_train, X_test, y_test
 
 
-def get_rmse (y, y_pred, table=True):
+def get_rmse (y, y_pred, show=True):
     '''Compute the root mean squared error for numeric arrays (regression)'''
     rmse = np.sqrt (mean_squared_error(y, y_pred))
-    table and print ('RMSE {:2.4f}'.format(rmse))
-    return rmse
+    show(pd.DataFrame(data=[rmse], columns=['RMSE']), showindex=False)
 
 def get_accuracy (y, y_pred, table=True, title=None):
     '''Get the accuracy of the prediction'''
@@ -111,6 +121,36 @@ def plot_confusion_matrix (matrix, title=None, rank=True):
     plt.matshow(matrix, cmap='YlGn_r')
     plt.colorbar()
     plt.show()
+    
+# -------------------------------------------------------------------------------------------------
+# Pandas Dataframe utility functions
+# -------------------------------------------------------------------------------------------------
+        
+def validate_series_category_with_input (series, set_input):
+    assert series.dtype.name == 'category', 'Series {} is not of type "category". TypeFound={}'.format(series.name, series.dtype.name)
+    set_categories_in_series  = set(series.cat.categories)
+    set_categiries_to_replace = set(set_input)
+    assert set_categories_in_series.issubset(set_categiries_to_replace), 'All categories in series must have a replacement. {} not subset of {}'.format(set_categories_in_series, set_categiries_to_replace)
+    
+def assert_column_exists (X, list_column_name):
+    ''' Assert ``X`` is a ``DataFrame`` and ``list_column_name`` has a subset of columns in ``X`` '''
+    assert_type_as_dataframe (X)
+    set_column_name      = set(list_column_name)
+    set_all_column_name  = set(X.columns)
+    assert set_column_name.issubset(set_all_column_name), 'Colum(s) not found. AllColumns={} GivenColumns={}'.format(set_all_column_name, set_column_name)
+    
+def assert_column_type_as_category (X, list_column_name):
+    ''' Assert that all columns in ``list_column_name`` in dataframe ``X`` are of type "category" '''
+    s = set(X[list_column_name].dtypes)
+    assert len(s) == 1, 'All columns must be of type "category". Columns={} TypesFound={}'.format(list_column_name, s)
+    assert 'category' in s, 'Columns are not of type "category", TypeFound={}'.format(s)
+
+def assert_type_as_dataframe (X):
+    assert type(X) is pd.DataFrame, 'InvalidType: Expected type "pandas.core.frame.DataFrame". Found={}'.format(type(X))    
+    
+def show (X, showindex=True, floatfmt='4f'):
+    assert_type_as_dataframe (X)
+    print(tabulate(X, headers=X.columns, tablefmt="psql", showindex=showindex, floatfmt=floatfmt))
     
     
     
