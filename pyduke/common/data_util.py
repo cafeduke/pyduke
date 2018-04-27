@@ -1,13 +1,26 @@
+import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import pyduke.common.core_util as cu
 from sklearn.datasets import fetch_mldata
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, accuracy_score, mean_squared_error
 from tabulate import tabulate
+import pyduke.common.core_util as cu
 
 SEED = 42
+
+_this_module = sys.modules[__name__]
+
+def main ():
+    get_accuracy([1, 0, 1], [1, 0, 0])
+    get_rmse([1, 0, 1], [1, 0, 0])
+    get_scores([1, 0, 1], [1, 0, 0])
+    
+# -------------------------------------------------------------------------------------------------
+# Load data
+# -------------------------------------------------------------------------------------------------
+    
     
 def load_sklearn_data (dataname, project_root=None, data_home=None):
     ''' 
@@ -32,18 +45,16 @@ def get_stratified_shuffle_split (X, y, **kwargs):
 def get_rmse (y, y_pred, show=True):
     '''Compute the root mean squared error for numeric arrays (regression)'''
     rmse = np.sqrt (mean_squared_error(y, y_pred))
-    show(pd.DataFrame(data=[rmse], columns=['RMSE']), showindex=False)
+    _this_module.show(pd.DataFrame(data=[rmse], columns=['RMSE']), showindex=False)
 
-def get_accuracy (y, y_pred, table=True, title=None):
+def get_accuracy (y, y_pred, title=None, show=True):
     '''Get the accuracy of the prediction'''
     accuracy   = accuracy_score  (y, y_pred)
-    if (table):
-        print ("")                
-        print ("{} : {:2.4f}".format(cu.join(title, "Accuracy", delimiter=" - "), accuracy))
+    if (show):
+        _this_module.show(pd.DataFrame(data=[accuracy], columns=['Accuracy']), showindex=False)
     return accuracy        
-    
 
-def get_scores (y, y_pred, table=True, title=None):
+def get_scores (y, y_pred, title=None, show=True):
     '''
     Compute and return scores for binary arrays: Accuracy, Precision, Recall, ROC-AUC
     
@@ -55,11 +66,11 @@ def get_scores (y, y_pred, table=True, title=None):
     y_pred : 1d array, boolean
         Predicted output
         
-    table : boolean, default=True
-        If True, a tabular score id displayed
+    show : boolean, default=True
+        If True, a tabular scores are displayed
 
     title : string, default=None
-        A title to be displayed    
+        A title to be prepended    
         
     Returns
     -------
@@ -71,15 +82,49 @@ def get_scores (y, y_pred, table=True, title=None):
     f1score    = f1_score        (y, y_pred)
     roc        = roc_auc_score   (y, y_pred)
     
-    if (table):
+    if (show):
         print ("")                
         print (cu.join(title, "Precision Recall Scores", delimiter=" - "))
-        score = np.array([accuracy, precision, recall, f1score, roc]).reshape(1, -1)
+        data = cu.to_2d([accuracy, precision, recall, f1score, roc])
         label = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'ROC AUC']
-        df = pd.DataFrame(score, index=['Score'], columns=label) 
-        print (df)
+        df = pd.DataFrame(data=data, index=['Score'], columns=label) 
+        _this_module.show (df)
        
     return (accuracy, precision, recall, f1score) 
+   
+# -------------------------------------------------------------------------------------------------
+# Pandas Dataframe utility functions
+# -------------------------------------------------------------------------------------------------
+        
+def validate_series_category_with_input (series, set_input):
+    assert series.dtype.name == 'category', 'Series {} is not of type "category". TypeFound={}'.format(series.name, series.dtype.name)
+    set_categories_in_series  = set(series.cat.categories)
+    set_categiries_to_replace = set(set_input)
+    assert set_categories_in_series.issubset(set_categiries_to_replace), 'All categories in series must have a replacement. {} not subset of {}'.format(set_categories_in_series, set_categiries_to_replace)
+    
+def assert_column_exists (X, list_column_name):
+    ''' Assert ``X`` is a ``DataFrame`` and ``list_column_name`` has a subset of columns in ``X`` '''
+    assert_type_as_dataframe (X)
+    set_column_name      = set(list_column_name)
+    set_all_column_name  = set(X.columns)
+    assert set_column_name.issubset(set_all_column_name), 'Colum(s) not found. AllColumns={} GivenColumns={}'.format(set_all_column_name, set_column_name)
+    
+def assert_column_type_as_category (X, list_column_name):
+    ''' Assert that all columns in ``list_column_name`` in dataframe ``X`` are of type "category" '''
+    s = set(X[list_column_name].dtypes)
+    assert len(s) == 1, 'All columns must be of type "category". Columns={} TypesFound={}'.format(list_column_name, s)
+    assert 'category' in s, 'Columns are not of type "category", TypeFound={}'.format(s)
+
+def assert_type_as_dataframe (X):
+    assert type(X) is pd.DataFrame, 'InvalidType: Expected type "pandas.core.frame.DataFrame". Found={}'.format(type(X))    
+    
+def show (X, showindex=True, floatfmt='4f'):
+    assert_type_as_dataframe (X)
+    print(tabulate(X, headers=X.columns, tablefmt="psql", showindex=showindex, floatfmt=floatfmt))
+    
+# -------------------------------------------------------------------------------------------------
+# Visualization
+# -------------------------------------------------------------------------------------------------
 
 
 def plot_precision_recall_vs_threshold (precision_list, recall_list, threshold_list, title=None):
@@ -122,36 +167,8 @@ def plot_confusion_matrix (matrix, title=None, rank=True):
     plt.colorbar()
     plt.show()
     
-# -------------------------------------------------------------------------------------------------
-# Pandas Dataframe utility functions
-# -------------------------------------------------------------------------------------------------
-        
-def validate_series_category_with_input (series, set_input):
-    assert series.dtype.name == 'category', 'Series {} is not of type "category". TypeFound={}'.format(series.name, series.dtype.name)
-    set_categories_in_series  = set(series.cat.categories)
-    set_categiries_to_replace = set(set_input)
-    assert set_categories_in_series.issubset(set_categiries_to_replace), 'All categories in series must have a replacement. {} not subset of {}'.format(set_categories_in_series, set_categiries_to_replace)
-    
-def assert_column_exists (X, list_column_name):
-    ''' Assert ``X`` is a ``DataFrame`` and ``list_column_name`` has a subset of columns in ``X`` '''
-    assert_type_as_dataframe (X)
-    set_column_name      = set(list_column_name)
-    set_all_column_name  = set(X.columns)
-    assert set_column_name.issubset(set_all_column_name), 'Colum(s) not found. AllColumns={} GivenColumns={}'.format(set_all_column_name, set_column_name)
-    
-def assert_column_type_as_category (X, list_column_name):
-    ''' Assert that all columns in ``list_column_name`` in dataframe ``X`` are of type "category" '''
-    s = set(X[list_column_name].dtypes)
-    assert len(s) == 1, 'All columns must be of type "category". Columns={} TypesFound={}'.format(list_column_name, s)
-    assert 'category' in s, 'Columns are not of type "category", TypeFound={}'.format(s)
-
-def assert_type_as_dataframe (X):
-    assert type(X) is pd.DataFrame, 'InvalidType: Expected type "pandas.core.frame.DataFrame". Found={}'.format(type(X))    
-    
-def show (X, showindex=True, floatfmt='4f'):
-    assert_type_as_dataframe (X)
-    print(tabulate(X, headers=X.columns, tablefmt="psql", showindex=showindex, floatfmt=floatfmt))
-    
-    
+  
+if __name__ == '__main__':
+    main()        
     
     

@@ -3,6 +3,8 @@ import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from functional import seq
+import pyduke.common.data_util as du
+import pyduke.common.core_util as cu
 
 def main ():
     df_ipl = {
@@ -33,7 +35,7 @@ class AddColumn (BaseEstimator,TransformerMixin):
         self.map_new_column_to_handler = {} if (map_new_column_to_handler is None) else map_new_column_to_handler
         
     def fit (self, X):
-        assert_type_as_dataframe (X)
+        du.assert_type_as_dataframe (X)
         return self
     
     def transform (self, X):
@@ -48,7 +50,7 @@ class RemoveColumn (BaseEstimator,TransformerMixin):
         self.column = column
         
     def fit(self, X):
-        assert_column_exists(X, self.column)
+        du.assert_column_exists(X, self.column)
         return self
     
     def transform(self, X):
@@ -79,18 +81,18 @@ class IndependentColumnImputer(BaseEstimator,TransformerMixin):
     
     def __init__(self, column_mean=None, column_mode=None, column_median=None, column_rm=None):
         self.map_strategy_to_columns = {}
-        if column_mean   is not None: self.map_strategy_to_columns['mean']   = to_list(column_mean)
-        if column_median is not None: self.map_strategy_to_columns['median'] = to_list(column_median)
-        if column_mode   is not None: self.map_strategy_to_columns['mode']   = to_list(column_mode)
+        if column_mean   is not None: self.map_strategy_to_columns['mean']   = cu.to_list(column_mean)
+        if column_median is not None: self.map_strategy_to_columns['median'] = cu.to_list(column_median)
+        if column_mode   is not None: self.map_strategy_to_columns['mode']   = cu.to_list(column_mode)
         
     def fit(self, X):
-        assert_type_as_dataframe (X)
+        du.assert_type_as_dataframe (X)
         self.result = pd.Series()  
         
         # k = Strategy name
         # v = List of column names to apply the strategy
         for k,v in self.map_strategy_to_columns.items():
-            assert_column_exists(X, v)
+            du.assert_column_exists(X, v)
             if (k == 'mean'):   self.result = self.result.append(X[v].mean())
             if (k == 'median'): self.result = self.result.append(X[v].median())
             if (k == 'mode'):   self.result = self.result.append(X[v].mode().iloc[0])
@@ -135,7 +137,7 @@ class DependentColumnImputer(BaseEstimator,TransformerMixin):
         self.map_column_to_handler = {} if (map_column_to_handler is None) else map_column_to_handler
         
     def fit (self, X):
-        assert_type_as_dataframe (X)
+        du.assert_type_as_dataframe (X)
         return self
     
     def transform (self, X):
@@ -176,7 +178,7 @@ class Mapper(BaseEstimator,TransformerMixin):
         self.remove_original       = remove_original
         
     def fit (self, X):
-        assert_type_as_dataframe (X)
+        du.assert_type_as_dataframe (X)
         return self
         
     def transform (self, X):
@@ -206,7 +208,7 @@ class StringToCategoryConverter(BaseEstimator,TransformerMixin):
         self.set_null = {'', 'n/a', 'null', 'none'}
         
     def fit (self, X): 
-        assert_type_as_dataframe (X)
+        du.assert_type_as_dataframe (X)
         # Filter out columns that are already a category
         self.column = seq(self.column).filter(lambda c: X[c].dtype.name != 'category').to_list()
         
@@ -246,7 +248,7 @@ class RangeToCategoryConverter(BaseEstimator,TransformerMixin):
         self.map_column_to_range = {} if (map_column_to_range is None) else map_column_to_range
         
     def fit (self, X):
-        assert_column_exists(X, self.map_column_to_range.keys())
+        du.assert_column_exists(X, self.map_column_to_range.keys())
         return self
         
     def transform (self, X):
@@ -281,7 +283,7 @@ class CategoryToWeightEncoder(BaseEstimator,TransformerMixin):
 
     def fit (self, X):
         for column, map_weight in self.map_column_category_weight.items():
-            validate_series_category_with_input (X[column], map_weight.keys())
+            du.validate_series_category_with_input (X[column], map_weight.keys())
         return self
         
     def transform (self, X):
@@ -308,7 +310,7 @@ class CategoryToOneHotEncoder(BaseEstimator,TransformerMixin):
         self.drop_first = drop_first
         
     def fit (self, X):
-        seq(self.column).for_each(lambda c: assert_column_type_as_category(X, [c]))
+        seq(self.column).for_each(lambda c: du.assert_column_type_as_category(X, [c]))
         return self
     
     def transform (self, X):
@@ -331,7 +333,7 @@ class Scaler (BaseEstimator,TransformerMixin):
         self.scaler = StandardScaler () if type == 'standard' else MinMaxScaler()
     
     def fit(self, X):
-        assert_type_as_dataframe (X)
+        du.assert_type_as_dataframe (X)
         if self.column is None: self.column = list(X.columns)
         self.scaler.fit(X[self.column])
         return self
@@ -339,39 +341,6 @@ class Scaler (BaseEstimator,TransformerMixin):
     def transform(self, X):
         X[self.column] = pd.DataFrame(self.scaler.transform(X[self.column]), columns=self.column)
         return X
-        
-        
-
-# -------------------------------------------------------------------------------------------------
-# Utility functions
-# -------------------------------------------------------------------------------------------------
-        
-def validate_series_category_with_input (series, set_input):
-    assert series.dtype.name == 'category', 'Series {} is not of type "category". TypeFound={}'.format(series.name, series.dtype.name)
-    set_categories_in_series  = set(series.cat.categories)
-    set_categiries_to_replace = set(set_input)
-    assert set_categories_in_series.issubset(set_categiries_to_replace), 'All categories in series must have a replacement. {} not subset of {}'.format(set_categories_in_series, set_categiries_to_replace)
-    
-def assert_column_exists (X, list_column_name):
-    ''' Assert ``X`` is a ``DataFrame`` and ``list_column_name`` has a subset of columns in ``X`` '''
-    assert_type_as_dataframe (X)
-    set_column_name      = set(list_column_name)
-    set_all_column_name  = set(X.columns)
-    assert set_column_name.issubset(set_all_column_name), 'Colum(s) not found. AllColumns={} GivenColumns={}'.format(set_all_column_name, set_column_name)
-    
-def assert_column_type_as_category (X, list_column_name):
-    ''' Assert that all columns in ``list_column_name`` in dataframe ``X`` are of type "category" '''
-    s = set(X[list_column_name].dtypes)
-    assert len(s) == 1, 'All columns must be of type "category". Columns={} TypesFound={}'.format(list_column_name, s)
-    assert 'category' in s, 'Columns are not of type "category", TypeFound={}'.format(s)
-
-def assert_type_as_dataframe (X):
-    assert type(X) is pd.DataFrame, 'InvalidType: Expected type "pandas.core.frame.DataFrame". Found={}'.format(type(X))
-    
-def to_list (x):
-    if type(x) is tuple or type(x) is list:
-        return list(x)
-    raise 'InvalidArgumentError: Argument "x" has to be of a type convertable to list using list(<item>), Valid types are "list", "tuple" or "set" Found={}'.format(type(x))
 
 if __name__ == '__main__':
     main()        
