@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='pyduke',
@@ -8,10 +8,13 @@ setup(
     author='Raghunandan Seshadri',
     author_email='raghubs81@gmail.com',
     license='None',
-    packages=['pyduke'],
+    packages=find_packages(where='src'),
+    package_dir={'':'src'},
     install_requires=[
         'scikit-learn', 'numpy', 'pandas', 
         'matplotlib',
         'pyfunctional', 
         ],
     zip_safe=False)
+
+
