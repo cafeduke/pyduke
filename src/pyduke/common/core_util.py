@@ -6,6 +6,10 @@ HR_WIDTH = 50
 
 DATE_TIME_FORMAT = '%a, %d-%b-%Y  %H:%M:%S %p'
 
+def main ():
+    A = np.array([[1, 2, 3, 4], [11, 12, 13, 14], [10, 7, 13, 9]])
+    print (index_of(A, 11, axis=1))
+
 def hr (size=HR_WIDTH):
     '''Draw a horizontal line of given ``size``'''
     print("-" * size)    
@@ -35,3 +39,31 @@ def to_list (x):
         return list(x)
     raise 'InvalidArgumentError: Argument "x" has to be of a type convertable to list using list(<item>), Valid types are "list", "tuple" or "set" Found={}'.format(type(x))
 
+def index_of (X, val, axis=1):
+    '''
+    If axis is 1 the array is parsed column vice else row vice.
+    If 'val' is found the index of the first occurrence is added to list
+    '''
+    
+    # Each column of X is scanned for 'val' (By default axis=1)
+    X = to_2d(X)
+    X = X.T if axis == 1 else X   
+    
+    # Count of rows
+    m = X.shape[0]
+    
+    # np.where returns two tuples of same length. 
+    # First has the x-coordinates and second has y-coordiantes
+    # Each (x,y) shall indicate the position in the matrix where the condition (passed to np.where) is True
+    
+    # Each element in 'c' tells which column we are talking about
+    # Corresponding element in 'r' tells which row of that column has 'val'
+    c,r = np.where(X == val)
+    search = np.full((1,m), -1)     
+    for i in range(len(c)):
+        if search[0][c[i]] == -1:
+            search[0][c[i]] = r[i]
+    return search
+
+if __name__ == '__main__':
+    main()    
