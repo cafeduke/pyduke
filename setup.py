@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pyduke',
-    version='1.3',
+    version='1.3.1',
     description='Duke python utilities',
     url='http://github.com/cafeduke/pyduke',
     author='Raghunandan Seshadri',
