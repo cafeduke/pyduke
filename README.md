@@ -2,26 +2,52 @@
 
 The project pyduke (Python Duke) consists of generic and machine learning utility modules. The package details are as follows
 
-| Module                          | Description                                                  |
-| ------------------------------- | ------------------------------------------------------------ |
-| pyduke.common.core_util.py      | Core language utilities                                      |
-| pyduke.common.data_util.py      | Machine learning data cleaning utilities                     |
+| Module                          | Description                              |
+| ------------------------------- | ---------------------------------------- |
+| pyduke.common.core_util.py      | Core language utilities                  |
+| pyduke.common.data_util.py      | Machine learning data cleaning utilities |
 | pyduke.mlutil.data_processor.py | Contains several classes (Estimators) that extend [BaseEstimator](http://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html) and [TransformerMixin](http://scikit-learn.org/stable/modules/generated/sklearn.base.TransformerMixin.html). These classes can be used together with [SciKit Learn](http://scikit-learn.org/stable/documentation.html) classes in data cleaning [Pipeline](http://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html). |
+
+
+
+# Install Cycle
+
+[PyDuke](https://pypi.org/project/pyduke/) is on [PyPI](https://pypi.org/)  repository and can be installed, updated and removed using [pip](https://pypi.org/project/pip/)
+
+## Install
+
+```python
+pip install pyduke
+```
+
+## Update to the latest version
+
+```
+pip install --update pyduke
+```
+
+## Uninstall
+
+```python
+pip uninstall pyduke
+```
+
+
 
 # Data Processor Classes
 
 The following classes belong to `pyduke.mlutil.data_processor` module. All classses extend  [BaseEstimator](http://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html) and [TransformerMixin](http://scikit-learn.org/stable/modules/generated/sklearn.base.TransformerMixin.html) similar to SciKit Learn classes like [Imputer](http://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.Imputer.html). Input to `fit` and `transform` methods must be a panda [DataFrame](https://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html)
 
-|  Sl  | Class                     | Description                                                  |
-| :--: | ------------------------- | ------------------------------------------------------------ |
+|  Sl  | Class                     | Description                              |
+| :--: | ------------------------- | ---------------------------------------- |
 |  1   | AddColumn                 | Add new column(s) by invoking corresponding handler(s). The handler should accept a panda [DataFrame](https://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html) and return a panda [Series](https://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.html). |
-|  2   | RemoveColumn              | Remove list of column(s)                                     |
-|  3   | IndependentColumnImputer  | Replace `NaN` in specified column(s) with corresponding strategy (mean|median|mode). Few columns can be selected for `mean` and few others for `mode` and the `NaN` replacement can be done in one transformation. Here, the strategy to replace `NaN` in a column is independent of other columns. |
+|  2   | RemoveColumn              | Remove list of column(s)                 |
+|  3   | IndependentColumnImputer  | Replace `NaN` in specified column(s) with corresponding strategy (mean |
 |  4   | DependentColumnImputer    | An imputer to be used when empty cells (`NaN`) of a column are to be derived from other column(s). Handler associated with each column is invoked.  The handler is expected to accept a panda [DataFrame](https://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html) and return a panda [Series](https://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.html). Only `NaN` are replaced from the [Series](https://pandas.pydata.org/pandas-docs/stable/generated/pandas.Series.html). |
 |  5   | Mapper                    | Process each cell of given column(s) with corresponding handler and create/replace the cell value with the one returned by the handler. A Mapper maps each cell of a column to another. Thus a new column is created. Optionally the original column may be deleted. |
 |  6   | StringToCategoryConverter | Convert column(s) to panda [category](https://pandas.pydata.org/pandas-docs/stable/categorical.html) data type. A category type is more useful for visualizations. Eventually a category can be label encoded, weight encoded or one-hot encoded. This class also adds null types like empty string, `'N/A'`, `'null'` `'none'` into a category 'NULL' (By defaults, customizable using option category_of_empty) |
 |  7   | RangeToCategoryConverter  | Classify various numeric ranges into categories. The numerical value of a column may indicate a category. Using the exact value may result in overfitting the model. RangeToCategoryConverter fits the purpose by  associating each range with a category label. |
-|  8   | CategoryToWeightEncoder   | Encode category column(s) with corresponding weights.        |
+|  8   | CategoryToWeightEncoder   | Encode category column(s) with corresponding weights. |
 |  9   | CategoryToOneHotEncoder   | Convert category column(s) to one-hot encoded format. Thus adding more features. Note that by default, one of the dummy column is dropped to prevent *dummy variable trap* |
 |  10  | Scaler                    | Scale column(s) using a scaler of type specified by `scaler_type`. Currenty, [Standard](http://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html) and [MinMax](http://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html) scalers from SciKit learn are used. Note that the Scaler like all other classes operates on [DataFrame](https://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html) |
 
